@@ -64,6 +64,8 @@ def train(model, loader, hyperparams):
             i = 0
             for (inputs, labels) in loader:
                 target = torch.zeros(inputs[:, 0, :].shape)
+
+                # Take the first n nucleotides from each sequence
                 target[::, :labels.size(1)] = labels
                 inputs = inputs.to(device)
                 target = target.to(device)
