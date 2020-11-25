@@ -3,9 +3,7 @@ Team members: Dana Udwin, Naomi Lee, Danny Adkins
 
 ## 0. Background
 ## 1. Data
-First, ensure you have the Kaggle CLI by using:
-
-`pip install kaggle` 
+First, ensure you have the Kaggle CLI by following the steps listed at https://www.kaggle.com/docs/api.
 
 Next, download the Stanford COVID vaccine dataset:
 
