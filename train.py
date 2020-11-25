@@ -64,12 +64,11 @@ def train(model, loader, hyperparams):
             i = 0
             for (inputs, labels) in loader:
                 target = torch.zeros(inputs[:, 0, :].shape)
-
-                # Take the first n nucleotides from each sequence
                 target[::, :labels.size(1)] = labels
                 inputs = inputs.to(device)
                 target = target.to(device)
-                predictions = model(inputs, target)
+#                 predictions = torch.FloatTensor(inputs.shape).uniform_(0, 1).to(device)
+                predictions = model(inputs)
                 l = loss(predictions[::, :68].reshape(-1).float(),
                          target[::, :68].reshape(-1).float())
                 total_loss += l.detach().cpu().numpy()
