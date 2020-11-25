@@ -5,6 +5,7 @@ Team members: Dana Udwin, Naomi Lee, Danny Adkins
 ## 1. Data
 To install data:
 `pip install kaggle` if you don't have the Kaggle CLI
+
 `kaggle competitions download -c stanford-covid-vaccine`
 
 ## 2. Training the model
