@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn as nn
+
 token2int = {x: i for i, x in enumerate('().ACGUBEHIMSX')}
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

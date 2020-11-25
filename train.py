@@ -3,12 +3,13 @@ from torch.utils.data import DataLoader
 import json
 import glob
 import torch
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import pandas as pd
 import numpy as np
+import torch.nn as nn
 
 from preprocess import get_raw_data, get_labels, get_tokenized_inputs, get_token2int
-from models import AttnModel
+from models.AttnModel import AttnModel
 
 in_features = ['sequence', 'structure', "predicted_loop_type"]
 
