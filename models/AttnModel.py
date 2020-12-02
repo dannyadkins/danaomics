@@ -22,7 +22,6 @@ class AttnModel(nn.Module):
         for i in range(0, inputs.size(1)):
             embedded_inputs.append(self.embeddings[i](inputs[:, i, :]))
         concated_embeddings = torch.cat(embedded_inputs, axis=2)
-        print(concated_embeddings.shape)
         predictions = self.encoder(concated_embeddings)
         predictions = self.dense(predictions)
         predictions = self.relu(predictions)

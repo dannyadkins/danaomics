@@ -14,7 +14,9 @@ from models.AttnModel import AttnModel
 in_features = ['sequence', 'structure', "predicted_loop_type"]
 
 raw_train, raw_test = get_raw_data()
-tokenized_inputs = get_tokenized_inputs(raw_train)
+tokenized_inputs = get_tokenized_inputs(raw_train, cols=in_features)
+
+
 labels = get_labels(raw_train)
 token2int = get_token2int()
 
