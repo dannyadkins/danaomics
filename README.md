@@ -9,6 +9,18 @@ Next, download the Stanford COVID vaccine dataset:
 
 `kaggle competitions download -c stanford-covid-vaccine`
 
-## 2. Training the model
+## 2. Training/testing the model
+The command line arguments are as follows:
+-T: train
+-t: test
+-s: save model after run
+-l: load presaved model
+
+To train:
+`python3 main.py -T`
+
+To test:
+`python3 main.py -t`
+
 ## 3. Evaluating the model
 ## 4. Visualization
