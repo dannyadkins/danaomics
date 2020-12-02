@@ -11,10 +11,10 @@ Next, download the Stanford COVID vaccine dataset:
 
 ## 2. Training/testing the model
 The command line arguments are as follows:
--T: train
--t: test
--s: save model after run
--l: load presaved model
+*-T: train
+*-t: test
+*-s: save model after run
+*-l: load presaved model
 
 To train:
 `python3 main.py -T`
