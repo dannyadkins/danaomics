@@ -84,6 +84,66 @@ def train(model, loader, hyperparams):
                 epochbar.set_description(desc)
 
 
+def train(model, loader, hyperparams):
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=hyperparams["learning_rate"])
+    loss = nn.MSELoss()
+
+    with tqdm(total=hyperparams["num_epochs"]) as epochbar:
+        for epoch in range(0, hyperparams["num_epochs"]):
+            total_loss = 0
+            i = 0
+            for (inputs, labels) in loader:
+
+                target = torch.zeros(inputs[:, 0, :].shape)
+                target[::, :labels.size(1)] = labels
+                inputs = inputs.to(device)
+                target = target.to(device)
+#                 predictions = torch.FloatTensor(inputs.shape).uniform_(0, 1).to(device)
+                predictions = model(inputs)
+                l = loss(predictions[::, :68].reshape(-1).float(),
+                         target[::, :68].reshape(-1).float())
+                total_loss += l.detach().cpu().numpy()
+                i += 1
+                optimizer.zero_grad()
+                l.backward()
+                optimizer.step()
+                desc = f'Epoch {epoch}, loss {total_loss/i}, batch {i}'
+                epochbar.set_description(desc)
+
+
+def test(model, loader, hyperparams):
+    loss = nn.MSELoss()
+    i = 0
+    total_loss = 0
+    total_dist = 0
+    total_rocauc = 0
+    total_prauc = 0
+    for j in range(0, 1):
+        for (inputs, labels) in loader:
+            target = torch.zeros(inputs[:, 0, :].shape)
+            target[::, :labels.size(1)] = labels
+            inputs = inputs.to(device)
+            target = target.to(device)
+
+            predictions = model(inputs)
+            print(predictions[0][:10])
+            print(target[0][:10])
+
+            l = loss(predictions[::, :68].reshape(-1).float(),
+                     target[::, :68].reshape(-1).float())
+            total_loss += l.detach().cpu().numpy()
+            print(l)
+            i += 1
+            prauc, rocauc = test_metrics(predictions[::, :68].reshape(-1).detach(
+            ).cpu().numpy(), target[::, :68].reshape(-1).detach().cpu().numpy())
+            total_prauc += prauc
+            total_rocauc += rocauc
+    print("PRAUC: ", total_prauc/i)
+    print("ROCAUC: ", total_rocauc/i)
+    print("Loss: ", total_loss/i)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--load", action="store_true",
