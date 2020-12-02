@@ -21,14 +21,15 @@ The command line arguments are as follows:
 `-l`: load presaved model
 
 `python3 main.py -T` to train without saving
+
 `python3 main.py -Ts` to train and save the model file
 
 
 
 ## 3. Evaluating the model
 
-To test:
 `python3 main.py -Tt` to train and test in the same run
+
 `python3 main.py -lt` to test from a preloaded model file
 
 
