@@ -17,15 +17,15 @@ token2int = get_token2int()
 in_features = ['sequence', 'structure', "predicted_loop_type"]
 hyperparams = {
     "batch_size": 100,
-    "num_epochs": 100,
-    "learning_rate": 0.002,
+    "num_epochs": 10,
+    "learning_rate": 0.005,
     "model_dim": 128,
     "embedding_size": 128,
     "num_heads": 1,
     "num_encoder_layers": 2,
     "num_decoder_layers": 2,
     "seq_len": 107,
-    "dropout": 0.3,
+    "dropout": 0.1,
     "num_in_features": len(in_features),
     "only_encoder": True,
     "vocab_size": len(token2int.items())
