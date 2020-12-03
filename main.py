@@ -15,14 +15,12 @@ from sklearn import metrics
 from preprocess import get_raw_data, get_labels, get_tokenized_inputs, get_token2int
 from models.AttnModel import AttnModel
 
-experiment = Experiment(project_name="danaomics")
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 token2int = get_token2int()
 in_features = ['sequence', 'structure', "predicted_loop_type"]
 hyperparams = {
-    "batch_size": 40,
-    "num_epochs": 10,
+    "batch_size": 50,
+    "num_epochs": 15,
     "learning_rate": 0.0005,
     "model_dim": 128,
     "embedding_size": 128,
@@ -35,7 +33,34 @@ hyperparams = {
     "only_encoder": True,
     "vocab_size": len(token2int.items())
 }
-experiment.log_parameters(hyperparams)
+
+possible_params = {
+    "learning_rate": [0.00005, 0.0005, 0.005],
+    "model_dim": [64, 256],
+    "embedding_size": [64, 256],
+    "num_encoder_layers": [1, 2],
+    "dropout": [0.01, 0.1, 0.4],
+}
+
+
+def build_hyperparam_grid(base_hyperparams):
+    grid = []
+    for learning_rate in possible_params['learning_rate']:
+        for model_dim in possible_params['model_dim']:
+            for embedding_size in possible_params['embedding_size']:
+                for num_encoder_layers in possible_params['num_encoder_layers']:
+                    for dropout in possible_params['dropout']:
+
+                        modified_hyperparams = base_hyperparams.copy()
+                        modified_hyperparams['learning_rate'] = learning_rate
+                        modified_hyperparams['model_dim'] = model_dim
+                        modified_hyperparams['embedding_size'] = embedding_size
+                        modified_hyperparams['num_encoder_layers'] = num_encoder_layers
+                        modified_hyperparams['dropout'] = dropout
+
+                        grid.append(modified_hyperparams)
+
+    return grid
 
 
 def prepare_model():
@@ -142,20 +167,34 @@ if __name__ == "__main__":
                         help="run training loop")
     parser.add_argument("-t", "--test", action="store_true",
                         help="run testing loop")
+    parser.add_argument("-H", "--hyperparamsearch", action="store_true",
+                        help="run hyperparameter search")
 
     args = parser.parse_args()
 
     model, train_loader, test_loader = prepare_model()
+    if args.hyperparamsearch:
+        print("Running hyperparameter search")
 
-    if args.load:
-        print("Loading saved model...")
-        model.load_state_dict(torch.load("./model.pt"))
-    if args.train:
-        print("Running training loop...")
-        train(model, train_loader, hyperparams, experiment)
-    if args.test:
-        print("Running testing loop...")
-        test(model, test_loader, hyperparams, experiment)
-    if args.save:
-        print("Saving model...")
-        torch.save(model.state_dict(), "./model.pt")
+        grid = build_hyperparam_grid(hyperparams)
+    else:
+        grid = [hyperparams]
+
+    for hyperparam_dict in grid:
+        print("Running an experiment with hyperparams: ", hyperparam_dict)
+        experiment = Experiment(project_name="danaomics")
+
+        experiment.log_parameters(hyperparam_dict)
+
+        if args.load:
+            print("Loading saved model...")
+            model.load_state_dict(torch.load("./model.pt"))
+        if args.train:
+            print("Running training loop...")
+            train(model, train_loader, hyperparam_dict, experiment)
+        if args.test:
+            print("Running testing loop...")
+            test(model, test_loader, hyperparam_dict, experiment)
+        if args.save:
+            print("Saving model...")
+            torch.save(model.state_dict(), "./model.pt")
