@@ -1,3 +1,5 @@
+from comet_ml import Experiment
+
 import os
 from torch.utils.data import DataLoader
 import json
@@ -12,6 +14,8 @@ from sklearn import metrics
 
 from preprocess import get_raw_data, get_labels, get_tokenized_inputs, get_token2int
 from models.AttnModel import AttnModel
+
+experiment = Experiment(project_name="danaomics")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 token2int = get_token2int()
@@ -31,6 +35,7 @@ hyperparams = {
     "only_encoder": True,
     "vocab_size": len(token2int.items())
 }
+experiment.log_parameters(hyperparams)
 
 
 def prepare_model():
@@ -58,31 +63,32 @@ def prepare_model():
     return model, train_loader, test_loader
 
 
-def train(model, loader, hyperparams):
+def train(model, loader, hyperparams, experiment):
     optimizer = torch.optim.Adam(
         model.parameters(), lr=hyperparams["learning_rate"])
     loss = nn.MSELoss()
 
-    with tqdm(total=hyperparams["num_epochs"]) as epochbar:
-        for epoch in range(0, hyperparams["num_epochs"]):
-            total_loss = 0
-            i = 0
-            for (inputs, labels) in loader:
-                target = torch.zeros(inputs[:, 0, :].shape)
-                target[::, :labels.size(1)] = labels
-                inputs = inputs.to(device)
-                target = target.to(device)
-                predictions = model(inputs)
-                l = loss(predictions[::, :68].reshape(-1).float(),
-                         target[::, :68].reshape(-1).float())
-                total_loss += l.detach().cpu().numpy()
-                i += 1
-                optimizer.zero_grad()
-                l.backward()
-                optimizer.step()
-                desc = f'Epoch {epoch}, loss {total_loss/i}, batch {i}/{len(loader)}'
-                epochbar.set_description(desc)
-            epochbar.update(1)
+    with experiment.train():
+        with tqdm(total=hyperparams["num_epochs"]) as epochbar:
+            for epoch in range(0, hyperparams["num_epochs"]):
+                total_loss = 0
+                i = 0
+                for (inputs, labels) in loader:
+                    target = torch.zeros(inputs[:, 0, :].shape)
+                    target[::, :labels.size(1)] = labels
+                    inputs = inputs.to(device)
+                    target = target.to(device)
+                    predictions = model(inputs)
+                    l = loss(predictions[::, :68].reshape(-1).float(),
+                             target[::, :68].reshape(-1).float())
+                    total_loss += l.detach().cpu().numpy()
+                    i += 1
+                    optimizer.zero_grad()
+                    l.backward()
+                    optimizer.step()
+                    desc = f'Epoch {epoch}, loss {total_loss/i}, batch {i}/{len(loader)}'
+                    epochbar.set_description(desc)
+                epochbar.update(1)
 
 
 def test_metrics(seq1, seq2, cutoff=0.7):
@@ -94,33 +100,36 @@ def test_metrics(seq1, seq2, cutoff=0.7):
     return prauc, rocauc
 
 
-def test(model, loader, hyperparams):
+def test(model, loader, hyperparams, experiment):
     loss = nn.MSELoss()
     i = 0
     total_loss = 0
     total_dist = 0
     total_rocauc = 0
     total_prauc = 0
-    for j in range(0, 1):
-        for (inputs, labels) in loader:
-            target = torch.zeros(inputs[:, 0, :].shape)
-            target[::, :labels.size(1)] = labels
-            inputs = inputs.to(device)
-            target = target.to(device)
+    with experiment.test():
+        for j in range(0, 1):
+            for (inputs, labels) in loader:
+                target = torch.zeros(inputs[:, 0, :].shape)
+                target[::, :labels.size(1)] = labels
+                inputs = inputs.to(device)
+                target = target.to(device)
 
-            predictions = model(inputs)
+                predictions = model(inputs)
 
-            l = loss(predictions[::, :68].reshape(-1).float(),
-                     target[::, :68].reshape(-1).float())
-            total_loss += l.detach().cpu().numpy()
-            i += 1
-            prauc, rocauc = test_metrics(predictions[::, :68].reshape(-1).detach(
-            ).cpu().numpy(), target[::, :68].reshape(-1).detach().cpu().numpy())
-            total_prauc += prauc
-            total_rocauc += rocauc
+                l = loss(predictions[::, :68].reshape(-1).float(),
+                         target[::, :68].reshape(-1).float())
+                total_loss += l.detach().cpu().numpy()
+                i += 1
+                prauc, rocauc = test_metrics(predictions[::, :68].reshape(-1).detach(
+                ).cpu().numpy(), target[::, :68].reshape(-1).detach().cpu().numpy())
+                total_prauc += prauc
+                total_rocauc += rocauc
     print("PRAUC: ", total_prauc/i)
     print("ROCAUC: ", total_rocauc/i)
     print("Loss: ", total_loss/i)
+    experiment.log_metric("ROCAUC", total_rocauc/i)
+    experiment.log_metric("test_loss", total_loss/i)
 
 
 if __name__ == "__main__":
@@ -143,10 +152,10 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load("./model.pt"))
     if args.train:
         print("Running training loop...")
-        train(model, train_loader, hyperparams)
+        train(model, train_loader, hyperparams, experiment)
     if args.test:
         print("Running testing loop...")
-        test(model, test_loader, hyperparams)
+        test(model, test_loader, hyperparams, experiment)
     if args.save:
         print("Saving model...")
         torch.save(model.state_dict(), "./model.pt")

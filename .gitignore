@@ -5,3 +5,4 @@
 /bpps
 /post_deadline_files
 model.pt
+.comet.config
