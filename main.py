@@ -21,9 +21,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 token2int = get_token2int()
 in_features = ['sequence', 'structure', "predicted_loop_type"]
 hyperparams = {
-    "batch_size": 100,
+    "batch_size": 40,
     "num_epochs": 10,
-    "learning_rate": 0.001,
+    "learning_rate": 0.0005,
     "model_dim": 128,
     "embedding_size": 128,
     "num_heads": 1,
