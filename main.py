@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import torch.nn as nn
 import argparse
+from sklearn import metrics
 
 from preprocess import get_raw_data, get_labels, get_tokenized_inputs, get_token2int
 from models.AttnModel import AttnModel
