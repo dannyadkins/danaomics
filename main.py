@@ -18,11 +18,11 @@ in_features = ['sequence', 'structure', "predicted_loop_type"]
 hyperparams = {
     "batch_size": 100,
     "num_epochs": 10,
-    "learning_rate": 0.005,
+    "learning_rate": 0.001,
     "model_dim": 128,
     "embedding_size": 128,
     "num_heads": 1,
-    "num_encoder_layers": 2,
+    "num_encoder_layers": 3,
     "num_decoder_layers": 2,
     "seq_len": 107,
     "dropout": 0.1,
@@ -33,6 +33,7 @@ hyperparams = {
 
 
 def prepare_model():
+    print("Preparing model...")
     raw_train, raw_test = get_raw_data()
     tokenized_inputs = get_tokenized_inputs(raw_train, cols=in_features)
 
@@ -66,12 +67,10 @@ def train(model, loader, hyperparams):
             total_loss = 0
             i = 0
             for (inputs, labels) in loader:
-
                 target = torch.zeros(inputs[:, 0, :].shape)
                 target[::, :labels.size(1)] = labels
                 inputs = inputs.to(device)
                 target = target.to(device)
-#                 predictions = torch.FloatTensor(inputs.shape).uniform_(0, 1).to(device)
                 predictions = model(inputs)
                 l = loss(predictions[::, :68].reshape(-1).float(),
                          target[::, :68].reshape(-1).float())
@@ -80,36 +79,18 @@ def train(model, loader, hyperparams):
                 optimizer.zero_grad()
                 l.backward()
                 optimizer.step()
-                desc = f'Epoch {epoch}, loss {total_loss/i}, batch {i}'
+                desc = f'Epoch {epoch}, loss {total_loss/i}, batch {i}/{len(loader)}'
                 epochbar.set_description(desc)
+            epochbar.update(1)
 
 
-def train(model, loader, hyperparams):
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=hyperparams["learning_rate"])
-    loss = nn.MSELoss()
-
-    with tqdm(total=hyperparams["num_epochs"]) as epochbar:
-        for epoch in range(0, hyperparams["num_epochs"]):
-            total_loss = 0
-            i = 0
-            for (inputs, labels) in loader:
-
-                target = torch.zeros(inputs[:, 0, :].shape)
-                target[::, :labels.size(1)] = labels
-                inputs = inputs.to(device)
-                target = target.to(device)
-#                 predictions = torch.FloatTensor(inputs.shape).uniform_(0, 1).to(device)
-                predictions = model(inputs)
-                l = loss(predictions[::, :68].reshape(-1).float(),
-                         target[::, :68].reshape(-1).float())
-                total_loss += l.detach().cpu().numpy()
-                i += 1
-                optimizer.zero_grad()
-                l.backward()
-                optimizer.step()
-                desc = f'Epoch {epoch}, loss {total_loss/i}, batch {i}'
-                epochbar.set_description(desc)
+def test_metrics(seq1, seq2, cutoff=0.7):
+    true_labels = np.where(seq2 > cutoff, 1, 0)
+    rocauc = metrics.roc_auc_score(true_labels, seq1)
+    pr = metrics.precision_recall_curve(true_labels, seq1)
+    arg1 = pr[0].argsort()
+    prauc = metrics.auc(pr[0][arg1], pr[1][arg1])
+    return prauc, rocauc
 
 
 def test(model, loader, hyperparams):
@@ -127,13 +108,10 @@ def test(model, loader, hyperparams):
             target = target.to(device)
 
             predictions = model(inputs)
-            print(predictions[0][:10])
-            print(target[0][:10])
 
             l = loss(predictions[::, :68].reshape(-1).float(),
                      target[::, :68].reshape(-1).float())
             total_loss += l.detach().cpu().numpy()
-            print(l)
             i += 1
             prauc, rocauc = test_metrics(predictions[::, :68].reshape(-1).detach(
             ).cpu().numpy(), target[::, :68].reshape(-1).detach().cpu().numpy())
