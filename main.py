@@ -39,7 +39,7 @@ possible_params = {
     "model_dim": [64, 256],
     "embedding_size": [64, 256],
     "num_encoder_layers": [1, 2],
-    "dropout": [0.01, 0.1, 0.4],
+    "dropout": [0.1],
 }
 
 
