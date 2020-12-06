@@ -35,10 +35,10 @@ hyperparams = {
 }
 
 possible_params = {
-    "learning_rate": [0.00005, 0.0005, 0.005],
-    "model_dim": [64, 256],
-    "embedding_size": [64, 256],
-    "num_encoder_layers": [1, 2],
+    "learning_rate": [0.00005],
+    "model_dim": [64, 512],
+    "embedding_size": [64, 512],
+    "num_encoder_layers": [3, 6],
     "dropout": [0.1],
 }
 
